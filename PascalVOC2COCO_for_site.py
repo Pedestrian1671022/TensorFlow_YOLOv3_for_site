@@ -43,7 +43,7 @@ class PascalVOC2coco(object):
                         self.file_name = p.split('>')[1].split('<')[0]
 
                         self.picture = os.path.join(path, 'pictures', self.file_name.split('.')[0] + '.jpg')
-                        if self.picture not in pictures:
+                        if self.picture not in self.pictures:
                             break
 
 
