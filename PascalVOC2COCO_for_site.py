@@ -57,7 +57,6 @@ class PascalVOC2coco(object):
                 x2 = int(bndbox.find('xmax').text)
                 y2 = int(bndbox.find('xmax').text)
 
-                self.rectangle = [x1, y1, x2, y2]
                 self.bbox = [x1, y1, x2 - x1, y2 - y1]  # COCO 对应格式[x,y,w,h]
 
                 self.annID += 1
