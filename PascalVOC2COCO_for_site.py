@@ -1,27 +1,26 @@
 # -*- coding:utf-8 -*-
 # !/usr/bin/env python
-import os
 import sys
 import glob
 import json
+import xml.etree.ElementTree as ET
 
 
 class PascalVOC2coco(object):
-    def __init__(self, xmls, pictures, json_file):
+    def __init__(self, xmls, json_file):
         '''
         :param xmls: 所有Pascal VOC的xml文件路径组成的列表
         :param save_json_path: json保存位置
         '''
         self.xmls = xmls
-        self.pictures = pictures
         self.json_file = json_file
         self.images = []
         self.categories = []
         self.annotations = []
         self.label = []
-        self.annID = 1
         self.height = 0
         self.width = 0
+        self.annID = 0
 
         self.save_json()
 
@@ -34,45 +33,35 @@ class PascalVOC2coco(object):
             sys.stdout.flush()
 
             self.num = num
-            path = os.path.dirname(xml)
-            path = os.path.dirname(path)
 
-            with open(xml, 'r') as fp:
-                for p in fp:
-                    if 'filename' in p:
-                        self.file_name = p.split('>')[1].split('<')[0]
+            root = ET.parse(xml).getroot()
 
-                        self.picture = os.path.join(path, 'pictures', self.file_name.split('.')[0] + '.jpg')
-                        if self.picture not in self.pictures:
-                            break
+            self.file_name =root.find('filename')
 
+            size = root.find('size')
+            self.width = int(size.find('width').text)
+            self.height = int(size.find('height').text)
 
-                    if 'width' in p:
-                        self.width = int(p.split('>')[1].split('<')[0])
-                    if 'height' in p:
-                        self.height = int(p.split('>')[1].split('<')[0])
+            self.images.append(self.image())
 
-                        self.images.append(self.image())
+            objects = root.findall('object')
+            for obj in objects:
+                self.supercategory = obj.find('name').text
+                if self.supercategory not in self.label:
+                    self.categories.append(self.category())
+                    self.label.append(self.supercategory)
 
-                    if '<object>' in p:
-                        # 类别
-                        d = [next(fp).split('>')[1].split('<')[0] for _ in range(9)]
-                        # self.supercategory = d[0]
-                        self.supercategory = 'site'
-                        if self.supercategory not in self.label:
-                            self.categories.append(self.category())
-                            self.label.append(self.supercategory)
+                bndbox = obj.find('bndbox')
+                x1 = int(bndbox.find('xmin').text)
+                y1 = int(bndbox.find('ymin').text)
+                x2 = int(bndbox.find('xmax').text)
+                y2 = int(bndbox.find('xmax').text)
 
-                        # 边界框
-                        x1 = int(d[-4])
-                        y1 = int(d[-3])
-                        x2 = int(d[-2])
-                        y2 = int(d[-1])
-                        self.rectangle = [x1, y1, x2, y2]
-                        self.bbox = [x1, y1, x2 - x1, y2 - y1]  # COCO 对应格式[x,y,w,h]
+                self.rectangle = [x1, y1, x2, y2]
+                self.bbox = [x1, y1, x2 - x1, y2 - y1]  # COCO 对应格式[x,y,w,h]
 
-                        self.annotations.append(self.annotation())
-                        self.annID += 1
+                self.annID += 1
+                self.annotations.append(self.annotation())
 
         sys.stdout.write('\n')
         sys.stdout.flush()
@@ -82,7 +71,7 @@ class PascalVOC2coco(object):
         image['height'] = self.height
         image['width'] = self.width
         image['id'] = self.num + 1
-        image['file_name'] = self.file_name
+        image['file_name'] = self.file_name.text
         return image
 
     def category(self):
@@ -123,6 +112,5 @@ class PascalVOC2coco(object):
 
 
 xmls = glob.glob('/home/Pedestrian/Documents/TensorFlow_YOLOv3-master/LabelImage_v1.8.1/data/xmls/*.xml')
-pictures = glob.glob('/home/Pedestrian/Documents/TensorFlow_YOLOv3-master/LabelImage_v1.8.1/data/pictures/*.jpg')
 
-PascalVOC2coco(xmls, pictures, './sites.json')
+PascalVOC2coco(xmls, './sites.json')
