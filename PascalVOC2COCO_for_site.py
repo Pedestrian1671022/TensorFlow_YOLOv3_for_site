@@ -95,7 +95,6 @@ class PascalVOC2coco(object):
                 return categorie['id']
         return -1
 
-    # '''
     def data2coco(self):
         data_coco = {}
         data_coco['images'] = self.images
