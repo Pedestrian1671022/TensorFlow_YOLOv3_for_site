@@ -46,7 +46,7 @@ class PascalVOC2coco(object):
 
             objects = root.findall('object')
             for obj in objects:
-                self.supercategory = obj.find('name').text
+                self.supercategory = "site"
                 if self.supercategory not in self.label:
                     self.categories.append(self.category())
                     self.label.append(self.supercategory)
@@ -60,7 +60,7 @@ class PascalVOC2coco(object):
                 self.bbox = [x1, y1, x2 - x1, y2 - y1]  # COCO 对应格式[x,y,w,h]
 
                 self.annID += 1
-                self.annotations.append(self.annotation())
+                self.annotations.append(self.annotation(self.bbox))
 
         sys.stdout.write('\n')
         sys.stdout.flush()
@@ -80,8 +80,20 @@ class PascalVOC2coco(object):
         category['name'] = self.supercategory
         return category
 
-    def annotation(self):
+    def annotation(self, bbox):
         annotation = {}
+        annotation['segmentation'] = []
+        seg = []
+        seg.append(bbox[0])
+        seg.append(bbox[1])
+        seg.append(bbox[0])
+        seg.append(bbox[1] + bbox[3])
+        seg.append(bbox[0] + bbox[2])
+        seg.append(bbox[1] + bbox[3])
+        seg.append(bbox[0] + bbox[2])
+        seg.append(bbox[1])
+        annotation['segmentation'].append(seg)
+        annotation['area'] = bbox[2] * bbox[3]
         annotation['iscrowd'] = 0
         annotation['image_id'] = self.num + 1
         annotation['bbox'] = self.bbox
