@@ -46,7 +46,8 @@ class PascalVOC2coco(object):
 
             objects = root.findall('object')
             for obj in objects:
-                self.supercategory = "site"
+#                 self.supercategory = 'site'
+                self.supercategory = obj.find('name').text
                 if self.supercategory not in self.label:
                     self.categories.append(self.category())
                     self.label.append(self.supercategory)
