@@ -15,6 +15,7 @@ with tf.Session() as sess:
     # plt.imshow(image_new, "new")
     # plt.imshow(image_gray[:,:,0], "gray")
     # plt.show()
+    # print(type(image_gray))
     cv2.imshow("gray", image_gray)
     cv2.imshow("new", image_new)
     cv2.waitKey()
