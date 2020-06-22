@@ -154,13 +154,11 @@ def perspective_translate(image, bboxes):
         M = cv2.getPerspectiveTransform(pts1, pts2)
         # M = cv2.getPerspectiveTransform(pts1, pts3)
         image = cv2.warpPerspective(image, M, (w, h), borderMode=cv2.BORDER_REPLICATE)
-        final_bboxes = []
-        for i in range(len(bboxes)):
-            new_bboxes = cv2.perspectiveTransform(bboxes[i][:4].reshape(1, 2, 2).astype(np.float), M)
-            new_bboxes = new_bboxes.reshape(4)
-            new_bboxes = np.hstack((new_bboxes, bboxes[i][4:])).astype(np.int).reshape(5)
-            final_bboxes.append(new_bboxes)
-    return image, final_bboxes
+        bboxes1, bboxes2 = bboxes[:, :4], bboxes[:, 4:]
+        new_bboxes = cv2.perspectiveTransform(bboxes1.reshape(1, 2 * len(bboxes1), 2).astype(np.float), M)
+        new_bboxes = new_bboxes.reshape(len(bboxes1), 4).astype(np.int)
+        bboxes = np.hstack((new_bboxes, bboxes2))
+    return image, bboxes
 
 
 def load_annotations(annot_path):
