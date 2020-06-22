@@ -145,6 +145,24 @@ def affine_translate(image, bboxes):
     return image, bboxes
 
 
+def perspective_translate(image, bboxes):
+    if random.random() < 0.5:
+        h, w, _= image.shape
+        pts1 = np.float32([[0, 0], [w, 0], [0, h], [w, h]])
+        pts2 = np.float32([[0 + w*0.1, h*0.1], [w-w*0.1, h*0.1], [0, h], [w, h]])
+        # pts3 = np.float32([[0, 0], [w, 0], [w*0.1, h-h*0.1], [w-w*0.1, h-h*0.1]])
+        M = cv2.getPerspectiveTransform(pts1, pts2)
+        # M = cv2.getPerspectiveTransform(pts1, pts3)
+        image = cv2.warpPerspective(image, M, (w, h), borderMode=cv2.BORDER_REPLICATE)
+        final_bboxes = []
+        for i in range(len(bboxes)):
+            new_bboxes = cv2.perspectiveTransform(bboxes[i][:4].reshape(1, 2, 2).astype(np.float), M)
+            new_bboxes = new_bboxes.reshape(4)
+            new_bboxes = np.hstack((new_bboxes, bboxes[i][4:])).astype(np.int).reshape(5)
+            final_bboxes.append(new_bboxes)
+    return image, final_bboxes
+
+
 def load_annotations(annot_path):
     with open(annot_path, 'r') as f:
         txt = f.readlines()
@@ -168,6 +186,7 @@ def parse_annotation(annotation):
     # image, bboxes = hide_patch(np.copy(image), np.copy(bboxes))
     # image, bboxes = grid_mask(np.copy(image), np.copy(bboxes))
     # image, bboxes = affine_translate(np.copy(image), np.copy(bboxes))
+    # image, bboxes = perspective_translate(np.copy(image), np.copy(bboxes))
     return image, bboxes
 
 
