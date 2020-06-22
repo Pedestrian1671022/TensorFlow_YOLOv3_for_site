@@ -6,6 +6,40 @@ import colorsys
 import numpy as np
 
 
+def random_crop(image_path, image, bboxes):
+    width = 1024
+    height = 1024
+    padding = 5
+    h, w, _ = image.shape
+    max_bbox = np.concatenate([np.min(bboxes[:, 0:2], axis=0), np.max(bboxes[:, 2:4], axis=0)], axis=-1)
+
+    max_l_trans = max_bbox[0]
+    max_u_trans = max_bbox[1]
+    max_r_trans = max_bbox[2]
+    max_d_trans = max_bbox[3]
+
+    if min(max_l_trans - padding, w - width) < max(0, max_l_trans - (
+            width - ((max_r_trans - max_l_trans) + padding))) or min(max_u_trans - padding, h - height) < max(0,
+                                                                                                              max_u_trans - (
+                                                                                                                      height - (
+                                                                                                                      (
+                                                                                                                              max_d_trans - max_u_trans) + padding))):
+        # raise Exception('image error:', image_path)
+        print(image_path)
+
+    crop_x = int(random.uniform(max(0, max_l_trans - (width - ((max_r_trans - max_l_trans) + padding))),
+                                min(max_l_trans - padding, w - width)))
+    crop_y = int(random.uniform(max(0, max_u_trans - (height - ((max_d_trans - max_u_trans) + padding))),
+                                min(max_u_trans - padding, h - height)))
+
+    image = image[crop_y: crop_y + height, crop_x: crop_x + width]
+
+    bboxes[:, [0, 2]] = bboxes[:, [0, 2]] - crop_x
+    bboxes[:, [1, 3]] = bboxes[:, [1, 3]] - crop_y
+
+    return image, bboxes
+
+
 def random_horizontal_flip(image, bboxes):
     if random.random() < 0.5:
         _, w, _ = image.shape
@@ -89,40 +123,7 @@ def grid_mask(image, bboxes):
     return image, bboxes
 
 
-def random_crop(image_path, image, bboxes):
-    width = 1024
-    height = 1024
-    padding = 5
-    h, w, _ = image.shape
-    max_bbox = np.concatenate([np.min(bboxes[:, 0:2], axis=0), np.max(bboxes[:, 2:4], axis=0)], axis=-1)
-
-    max_l_trans = max_bbox[0]
-    max_u_trans = max_bbox[1]
-    max_r_trans = max_bbox[2]
-    max_d_trans = max_bbox[3]
-
-    if min(max_l_trans - padding, w - width) < max(0, max_l_trans - (
-            width - ((max_r_trans - max_l_trans) + padding))) or min(max_u_trans - padding, h - height) < max(0,
-                                                                                                              max_u_trans - (
-                                                                                                                      height - (
-                                                                                                                      (
-                                                                                                                              max_d_trans - max_u_trans) + padding))):
-        # raise Exception('image error:', image_path)
-        print(image_path)
-
-    crop_x = int(random.uniform(max(0, max_l_trans - (width - ((max_r_trans - max_l_trans) + padding))),
-                                min(max_l_trans - padding, w - width)))
-    crop_y = int(random.uniform(max(0, max_u_trans - (height - ((max_d_trans - max_u_trans) + padding))),
-                                min(max_u_trans - padding, h - height)))
-
-    image = image[crop_y: crop_y + height, crop_x: crop_x + width]
-
-    bboxes[:, [0, 2]] = bboxes[:, [0, 2]] - crop_x
-    bboxes[:, [1, 3]] = bboxes[:, [1, 3]] - crop_y
-
-    return image, bboxes
-
-def random_translate(image, bboxes):
+def affine_translate(image, bboxes):
     if random.random() < 0.5:
         h, w, _ = image.shape
         max_bbox = np.concatenate([np.min(bboxes[:, 0:2], axis=0), np.max(bboxes[:, 2:4], axis=0)], axis=-1)
@@ -155,18 +156,18 @@ def load_annotations(annot_path):
 def parse_annotation(annotation):
 
     line = annotation.split()
-    image_path = line[0]
+    image_path = line[0] + ' ' + line[1]
     if not os.path.exists(image_path):
         raise KeyError("%s does not exist ... " % image_path)
     image = np.array(cv2.imread(image_path))
     bboxes = np.array([list(map(int, box.split(','))) for box in line[2:]])
 
     image, bboxes = random_crop(image_path, np.copy(image), np.copy(bboxes))
-    # image, bboxes = random_horizontal_flip(np.copy(image), np.copy(bboxes))
+    image, bboxes = random_horizontal_flip(np.copy(image), np.copy(bboxes))
     # image, bboxes = random_erasing(np.copy(image), np.copy(bboxes))
     # image, bboxes = hide_patch(np.copy(image), np.copy(bboxes))
     # image, bboxes = grid_mask(np.copy(image), np.copy(bboxes))
-    # image, bboxes = random_translate(np.copy(image), np.copy(bboxes))
+    # image, bboxes = affine_translate(np.copy(image), np.copy(bboxes))
     return image, bboxes
 
 
