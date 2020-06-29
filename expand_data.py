@@ -1,3 +1,4 @@
+
 import os
 import cv2
 import math
@@ -161,6 +162,27 @@ def perspective_translate(image, bboxes):
     return image, bboxes
 
 
+def mixup(image, bboxes):
+    if random.random() < 0.5:
+        annot_path = "/home/pc405/Music/Pedestrian/TensorFlow_YOLOv3_for_site/LabelImage_v1.8.1/data/train.txt"
+        annotations = load_annotations(annot_path)
+        image1, bboxes1 = image, bboxes
+        index = random.randint(0, len(annotations)-1)
+        line = annotations[index].split()
+        image_path = line[0] + " " + line[1]
+        if not os.path.exists(image_path):
+            raise KeyError("%s does not exist ... " % image_path)
+        image2 = np.array(cv2.imread(image_path))
+        bboxes2 = np.array([list(map(int, box.split(','))) for box in line[2:]])
+        image2, bboxes2 = random_crop(image_path, np.copy(image2), np.copy(bboxes2))
+        image2, bboxes2 = random_horizontal_flip(np.copy(image2), np.copy(bboxes2))
+        alpha = random.uniform(0.3, 0.7)
+        beta = random.uniform(0.3, 0.7)
+        image = cv2.addWeighted(image1, alpha, image2, beta, 0)
+        bboxes = np.vstack((bboxes1, bboxes2))
+    return image, bboxes
+
+
 def load_annotations(annot_path):
     with open(annot_path, 'r') as f:
         txt = f.readlines()
@@ -172,7 +194,7 @@ def load_annotations(annot_path):
 def parse_annotation(annotation):
 
     line = annotation.split()
-    image_path = line[0] + ' ' + line[1]
+    image_path = line[0]
     if not os.path.exists(image_path):
         raise KeyError("%s does not exist ... " % image_path)
     image = np.array(cv2.imread(image_path))
@@ -185,6 +207,7 @@ def parse_annotation(annotation):
     # image, bboxes = grid_mask(np.copy(image), np.copy(bboxes))
     # image, bboxes = affine_translate(np.copy(image), np.copy(bboxes))
     # image, bboxes = perspective_translate(np.copy(image), np.copy(bboxes))
+    image, bboxes = mixup(np.copy(image), np.copy(bboxes))
     return image, bboxes
 
 
@@ -198,7 +221,7 @@ def read_class_names(class_file_name):
 
 
 def draw_bbox(image, bboxes, classes=read_class_names(
-    "/home/Pedestrian/Documents/TensorFlow_YOLOv3_for_site/LabelImage_v1.8.1/data/predefined_classes.txt"),
+    "/home/pc405/Music/Pedestrian/TensorFlow_YOLOv3_for_site/LabelImage_v1.8.1/data/predefined_classes.txt"),
               show_label=True):
 
     num_classes = len(classes)
@@ -232,7 +255,7 @@ def draw_bbox(image, bboxes, classes=read_class_names(
 
 
 if __name__ == '__main__':
-    annot_path = "/home/Pedestrian/Documents/TensorFlow_YOLOv3_for_site/LabelImage_v1.8.1/data/train.txt"
+    annot_path = "/home/pc405/Music/Pedestrian/TensorFlow_YOLOv3_for_site/LabelImage_v1.8.1/data/train.txt"
     annotations = load_annotations(annot_path)
     for annotation in annotations:
         image, bboxes = parse_annotation(annotation)
