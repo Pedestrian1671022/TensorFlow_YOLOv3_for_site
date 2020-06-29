@@ -198,7 +198,7 @@ def parse_annotation(annotation):
     if not os.path.exists(image_path):
         raise KeyError("%s does not exist ... " % image_path)
     image = np.array(cv2.imread(image_path))
-    bboxes = np.array([list(map(int, box.split(','))) for box in line[2:]])
+    bboxes = np.array([list(map(int, box.split(','))) for box in line[1:]])
 
     image, bboxes = random_crop(image_path, np.copy(image), np.copy(bboxes))
     image, bboxes = random_horizontal_flip(np.copy(image), np.copy(bboxes))
