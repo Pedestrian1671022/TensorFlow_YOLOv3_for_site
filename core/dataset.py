@@ -11,19 +11,19 @@ class Dataset(object):
     """implement Dataset here"""
 
     def __init__(self):
-        self.annot_path = "/home/Pedestrian/Documents/TensorFlow_YOLOv3-master/LabelImage_v1.8.1/data/train.txt"
-        self.batch_size = 2
+        self.annot_path = "/home/pc405/Music/Pedestrian/TensorFlow_YOLOv3_for_site/LabelImage_v1.8.1/data/train.txt"
+        self.batch_size = 1
         self.data_aug = True  # 防止过拟合
 
         # self.train_input_sizes = [320, 352, 384, 416, 448, 480, 512, 544, 576, 608]  #防止过拟合
         self.train_input_sizes = [1024]
         self.strides = np.array([8, 16, 32])
         self.classes = utils.read_class_names(
-            "/home/Pedestrian/Documents/TensorFlow_YOLOv3-master/LabelImage_v1.8.1/data/predefined_classes.txt")
+            "/home/pc405/Music/Pedestrian/TensorFlow_YOLOv3_for_site/LabelImage_v1.8.1/data/predefined_classes.txt")
         self.num_classes = len(self.classes)
         self.anchors = np.array(
             utils.get_anchors(
-                "/home/Pedestrian/Documents/TensorFlow_YOLOv3-master/LabelImage_v1.8.1/data/basline_anchors.txt"))
+                "/home/pc405/Music/Pedestrian/TensorFlow_YOLOv3_for_site/LabelImage_v1.8.1/data/basline_anchors.txt"))
         self.anchor_per_scale = 3
         self.max_bbox_per_scale = 150
 
@@ -224,15 +224,35 @@ class Dataset(object):
         if random.random() < 0.5:
             h, w, _ = image.shape
             pts1 = np.float32([[0, 0], [w, 0], [0, h], [w, h]])
-            pts2 = np.float32([[0 + w * 0.1, h * 0.1], [w - w * 0.1, h * 0.1], [0, h], [w, h]])
-            # pts3 = np.float32([[0, 0], [w, 0], [w*0.1, h-h*0.1], [w-w*0.1, h-h*0.1]])
+            xmin = random.uniform(0, w * 0.15)
+            ymin = random.uniform(0, h * 0.15)
+            xmax = random.uniform(w - w * 0.15, w - 1)
+            ymax = random.uniform(h - h * 0.15, h - 1)
+            pts2 = np.float32([[xmin, ymin], [xmax, ymin], [xmin, ymax], [xmax, ymax]])
             M = cv2.getPerspectiveTransform(pts1, pts2)
-            # M = cv2.getPerspectiveTransform(pts1, pts3)
             image = cv2.warpPerspective(image, M, (w, h), borderMode=cv2.BORDER_REPLICATE)
             bboxes1, bboxes2 = bboxes[:, :4], bboxes[:, 4:]
             new_bboxes = cv2.perspectiveTransform(bboxes1.reshape(1, 2 * len(bboxes1), 2).astype(np.float), M)
             new_bboxes = new_bboxes.reshape(len(bboxes1), 4).astype(np.int)
             bboxes = np.hstack((new_bboxes, bboxes2))
+        return image, bboxes
+
+    def mixup(self, image, bboxes):
+        if random.random() < 0.5:
+            image1, bboxes1 = image, bboxes
+            index = random.randint(0, len(self.annotations)-1)
+            line = self.annotations[index].split()
+            image_path = line[0] + " " + line[1]
+            if not os.path.exists(image_path):
+                raise KeyError("%s does not exist ... " % image_path)
+            image2 = np.array(cv2.imread(image_path))
+            bboxes2 = np.array([list(map(int, box.split(','))) for box in line[2:]])
+            image2, bboxes2 = self.random_crop(image_path, np.copy(image2), np.copy(bboxes2))
+            image2, bboxes2 = self.random_horizontal_flip(np.copy(image2), np.copy(bboxes2))
+            alpha = random.uniform(0.3, 0.7)
+            beta = random.uniform(0.3, 0.7)
+            image = cv2.addWeighted(image1, alpha, image2, beta, 0)
+            bboxes = np.vstack((bboxes1, bboxes2))
         return image, bboxes
 
     def parse_annotation(self, annotation):
@@ -246,12 +266,13 @@ class Dataset(object):
 
         if self.data_aug:
             image, bboxes = self.random_crop(image_path, np.copy(image), np.copy(bboxes))
-            # image, bboxes = self.random_horizontal_flip(np.copy(image), np.copy(bboxes))
+            image, bboxes = self.random_horizontal_flip(np.copy(image), np.copy(bboxes))
             # image, bboxes = self.random_erasing(np.copy(image), np.copy(bboxes))
             # image, bboxes = self.hide_patch(np.copy(image), np.copy(bboxes))
             # image, bboxes = self.grid_mask(np.copy(image), np.copy(bboxes))
             # image, bboxes = self.affine_translate(np.copy(image), np.copy(bboxes))
-            image, bboxes = self.perspective_translate(np.copy(image), np.copy(bboxes))
+            # image, bboxes = self.perspective_translate(np.copy(image), np.copy(bboxes))
+            image, bboxes = self.mixup(np.copy(image), np.copy(bboxes))
 
         image, bboxes = utils.image_preporcess(np.copy(image), [self.train_input_size, self.train_input_size],
                                                np.copy(bboxes))
