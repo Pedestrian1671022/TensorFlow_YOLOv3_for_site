@@ -191,7 +191,7 @@ def mosaic(image, bboxes):
             raise KeyError("%s does not exist ... " % image_path2)
         image2 = np.array(cv2.imread(image_path2))
         bboxes2 = np.array([list(map(int, box.split(','))) for box in line2[1:]])
-        image2, bboxes2 = random_crop(512, 512, 5, image_path2, np.copy(image2), np.copy(bboxes2))
+        image2, bboxes2 = random_crop(512, 512, 0, image_path2, np.copy(image2), np.copy(bboxes2))
         image2, bboxes2 = random_horizontal_flip(np.copy(image2), np.copy(bboxes2))
         bboxes2[:, [1, 3]] = bboxes2[:, [1, 3]] + 512
 
@@ -202,7 +202,7 @@ def mosaic(image, bboxes):
             raise KeyError("%s does not exist ... " % image_path3)
         image3 = np.array(cv2.imread(image_path3))
         bboxes3 = np.array([list(map(int, box.split(','))) for box in line3[1:]])
-        image3, bboxes3 = random_crop(512, 512, 5, image_path3, np.copy(image3), np.copy(bboxes3))
+        image3, bboxes3 = random_crop(512, 512, 0, image_path3, np.copy(image3), np.copy(bboxes3))
         image3, bboxes3 = random_horizontal_flip(np.copy(image3), np.copy(bboxes3))
         bboxes3[:, [0, 2]] = bboxes3[:, [0, 2]] + 512
 
@@ -213,7 +213,7 @@ def mosaic(image, bboxes):
             raise KeyError("%s does not exist ... " % image_path4)
         image4 = np.array(cv2.imread(image_path4))
         bboxes4 = np.array([list(map(int, box.split(','))) for box in line4[1:]])
-        image4, bboxes4 = random_crop(512, 512, 5, image_path4, np.copy(image4), np.copy(bboxes4))
+        image4, bboxes4 = random_crop(512, 512, 0, image_path4, np.copy(image4), np.copy(bboxes4))
         image4, bboxes4 = random_horizontal_flip(np.copy(image4), np.copy(bboxes4))
         bboxes4[:, [0, 1, 2, 3]] = bboxes4[:, [0, 1, 2, 3]] + 512
 
