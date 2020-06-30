@@ -242,11 +242,11 @@ class Dataset(object):
             image1, bboxes1 = image, bboxes
             index = random.randint(0, len(self.annotations)-1)
             line = self.annotations[index].split()
-            image_path = line[0] + " " + line[1]
+            image_path = line[0]
             if not os.path.exists(image_path):
                 raise KeyError("%s does not exist ... " % image_path)
             image2 = np.array(cv2.imread(image_path))
-            bboxes2 = np.array([list(map(int, box.split(','))) for box in line[2:]])
+            bboxes2 = np.array([list(map(int, box.split(','))) for box in line[1:]])
             image2, bboxes2 = self.random_crop(image_path, np.copy(image2), np.copy(bboxes2))
             image2, bboxes2 = self.random_horizontal_flip(np.copy(image2), np.copy(bboxes2))
             alpha = random.uniform(0.3, 0.7)
